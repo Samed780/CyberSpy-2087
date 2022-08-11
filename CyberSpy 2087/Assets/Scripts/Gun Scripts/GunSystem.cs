@@ -8,7 +8,9 @@ public class GunSystem : MonoBehaviour
     public Transform cameraHead;
     public Transform firePos;
     public GameObject bullet;
-    public GameObject muzzleFlash, bulletImpact, waterLeak, bloodEffect;
+    public GameObject muzzleFlash, bulletImpact, waterLeak, bloodEffect, rocketTrail;
+
+    public Animator anim;
 
     public bool canAutoFire;
     bool isShooting, readyToShoot = true;
@@ -17,8 +19,10 @@ public class GunSystem : MonoBehaviour
 
     public int bulletsAvailable, totalBullets, magazineSize;
 
+    //relaod
     public float reloadTime;
     private bool isReloading;
+    public int pickedUpAmmo;
 
     private UICanvasController canvasController;
 
@@ -29,6 +33,13 @@ public class GunSystem : MonoBehaviour
     public float zoomAmount;
 
     public int damageAmout;
+
+    public string name;
+    public string gunAnimation;
+
+    public bool rocketLauncher;
+
+
 
     // Start is called before the first frame update
     void Start()
@@ -45,6 +56,7 @@ public class GunSystem : MonoBehaviour
         Shoot();
         GunManager();
         UpdateAmmoText();
+        AnimationManager();
     }
 
     private void GunManager()
@@ -79,13 +91,19 @@ public class GunSystem : MonoBehaviour
                 if (Vector3.Distance(cameraHead.position, hit.point) > 2f)
                 {
                     firePos.LookAt(hit.point);
-                    if (hit.collider.tag == "Shootable")
-                        Instantiate(bulletImpact, hit.point, Quaternion.LookRotation(hit.normal));
-                    if (hit.collider.tag == "Water Leak")
-                        Instantiate(waterLeak, hit.point, Quaternion.LookRotation(hit.normal));
+
+                    if (!rocketLauncher)
+                    {
+                        if (hit.collider.tag == "Shootable")
+                            Instantiate(bulletImpact, hit.point, Quaternion.LookRotation(hit.normal));
+                        if (hit.collider.tag == "Water Leak")
+                            Instantiate(waterLeak, hit.point, Quaternion.LookRotation(hit.normal));
+                    }
+
+                    
                 }
 
-                if (hit.collider.tag == "Enemy")
+                if (hit.collider.tag == "Enemy" && !rocketLauncher)
                 {
                     hit.collider.GetComponent<EnemyHealthSystem>().TakeDamage(damageAmout);
                     Instantiate(bloodEffect, hit.point, Quaternion.LookRotation(hit.normal));
@@ -97,8 +115,16 @@ public class GunSystem : MonoBehaviour
 
             bulletsAvailable--;
 
-            Instantiate(muzzleFlash, firePos.position, firePos.rotation, firePos);
-            Instantiate(bullet, firePos.position, firePos.rotation, firePos);
+            if (!rocketLauncher)
+            {
+                Instantiate(muzzleFlash, firePos.position, firePos.rotation, firePos);
+                Instantiate(bullet, firePos.position, firePos.rotation, firePos);
+            }
+            else
+            {
+                Instantiate(rocketTrail, firePos.position, firePos.rotation);
+                Instantiate(bullet, firePos.position, firePos.rotation);
+            }
 
             StartCoroutine(ResetShooting());
 
@@ -113,7 +139,19 @@ public class GunSystem : MonoBehaviour
 
     private void Reload()
     {
+        anim.SetTrigger(gunAnimation);
+
+        isReloading = true;
+
+        StartCoroutine(ReloadTime());
+    }
+
+    IEnumerator ReloadTime()
+    {
+        yield return new WaitForSeconds(reloadTime);
+
         int bulletsToAdd = magazineSize - bulletsAvailable;
+
         if (totalBullets > bulletsToAdd)
         {
             totalBullets -= bulletsToAdd;
@@ -124,16 +162,33 @@ public class GunSystem : MonoBehaviour
             bulletsAvailable += totalBullets;
             totalBullets = 0;
         }
-
-        isReloading = true;
-
-        StartCoroutine(ReloadTime());
+        isReloading = false;
     }
 
-    IEnumerator ReloadTime()
+    public void AddAmmo()
     {
-        yield return new WaitForSeconds(reloadTime);
-        isReloading = false;
+        totalBullets += pickedUpAmmo;
+    }
+
+    void AnimationManager()
+    {
+        switch (name)
+        {
+            case "Pistol" :
+                gunAnimation = "PistolReload";
+                break;
+            case "Rifle" :
+                gunAnimation = "RifleReload";
+                break;
+            case "Sniper":
+                gunAnimation = "SniperReload";
+                break;
+            case "Rocket Launcher":
+                gunAnimation = "RocketReload";
+                break;
+            default :
+                break;
+        }
     }
 
     private void UpdateAmmoText()

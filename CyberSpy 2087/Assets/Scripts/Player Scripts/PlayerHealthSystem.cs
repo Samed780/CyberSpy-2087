@@ -35,6 +35,17 @@ public class PlayerHealthSystem : MonoBehaviour
         {
             gameObject.SetActive(false);
             FindObjectOfType<GameManager>().Respawn();
+            AudioManager.instance.StopBGMusic();
         }
+    }
+
+    public void Heal(int heal)
+    {
+        currentHealth += heal;
+
+        if(currentHealth > maxHealth)
+            currentHealth = maxHealth;
+
+        canvasController.SetHealth(currentHealth);
     }
 }

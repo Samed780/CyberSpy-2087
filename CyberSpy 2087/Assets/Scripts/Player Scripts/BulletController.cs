@@ -7,6 +7,9 @@ public class BulletController : MonoBehaviour
     public float speed, bulletLife;
     public Rigidbody rb;
 
+    public ParticleSystem explosion;
+    public bool rocket;
+
     // Start is called before the first frame update
     void Start()
     {
@@ -28,8 +31,10 @@ public class BulletController : MonoBehaviour
         rb.velocity = transform.forward * speed;
     }
 
-    private void OnCollisionEnter(Collision collision)
+    private void OnTriggerEnter(Collider other)
     {
+        if (rocket)
+            Instantiate(explosion, transform.position, Quaternion.identity);
         Destroy(gameObject);
     }
 }

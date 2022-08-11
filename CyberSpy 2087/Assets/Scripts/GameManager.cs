@@ -5,7 +5,7 @@ using UnityEngine.SceneManagement;
 
 public class GameManager : MonoBehaviour
 {
-    private float deathTimer = 2f;
+    private float deathTimer = 3f;
 
     public void Respawn()
     {
