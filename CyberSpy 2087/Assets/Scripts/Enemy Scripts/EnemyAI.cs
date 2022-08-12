@@ -101,6 +101,7 @@ public class EnemyAI : MonoBehaviour
         else if(readyToAttack && meleeAttacker)
         {
             animator.SetTrigger("Attack");
+            AudioManager.instance.PlaySFX(5);
         }
     }
 

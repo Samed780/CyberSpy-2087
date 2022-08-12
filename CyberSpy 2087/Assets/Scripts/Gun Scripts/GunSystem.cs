@@ -57,6 +57,8 @@ public class GunSystem : MonoBehaviour
         GunManager();
         UpdateAmmoText();
         AnimationManager();
+
+        if (PauseMenu.isPaused) { return; }
     }
 
     private void GunManager()
@@ -140,6 +142,8 @@ public class GunSystem : MonoBehaviour
     private void Reload()
     {
         anim.SetTrigger(gunAnimation);
+
+        AudioManager.instance.PlaySFX(7);
 
         isReloading = true;
 

@@ -38,6 +38,8 @@ public class SelectWeapon : MonoBehaviour
         if(currentGunIndex >= guns.Count)
             currentGunIndex = 0;
 
+        AudioManager.instance.PlaySFX(6);
+
         activeGun = guns[currentGunIndex];
         activeGun.gameObject.SetActive(true);
     }

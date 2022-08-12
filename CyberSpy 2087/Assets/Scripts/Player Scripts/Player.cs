@@ -102,8 +102,11 @@ public class Player : MonoBehaviour
     {
         canJump = Physics.OverlapSphere(ground.position, groundDistance, groundLayer).Length > 0;
 
-        if (Input.GetButtonDown("Jump") && canJump )
+        if (Input.GetButtonDown("Jump") && canJump)
+        {
             velocity.y = Mathf.Sqrt(-2f * jumpHeight * Physics.gravity.y) * Time.deltaTime;
+            AudioManager.instance.PlaySFX(2);
+        }
 
         controller.Move(velocity);
     }

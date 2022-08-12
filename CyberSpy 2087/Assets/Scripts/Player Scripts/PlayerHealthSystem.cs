@@ -29,6 +29,8 @@ public class PlayerHealthSystem : MonoBehaviour
     {
         currentHealth -= damage;
 
+        AudioManager.instance.PlaySFX(4);
+
         canvasController.SetHealth(currentHealth);
 
         if(currentHealth <= 0)
@@ -36,6 +38,7 @@ public class PlayerHealthSystem : MonoBehaviour
             gameObject.SetActive(false);
             FindObjectOfType<GameManager>().Respawn();
             AudioManager.instance.StopBGMusic();
+            AudioManager.instance.PlaySFX(3);
         }
     }
 

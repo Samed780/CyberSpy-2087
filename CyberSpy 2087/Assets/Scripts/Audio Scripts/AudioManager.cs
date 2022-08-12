@@ -24,5 +24,11 @@ public class AudioManager : MonoBehaviour
     public void StopBGMusic()
     {
         bg_Music.Stop();
-    } 
+    }
+    
+    public void PlaySFX(int index)
+    {
+        SFXs[index].Stop();
+        SFXs[index].Play();
+    }
 }
