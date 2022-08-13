@@ -40,12 +40,22 @@ public class Player : MonoBehaviour
     public float slideSpeed = 10f;
     private float currentSlideTimer, maxSlideTime = 2f;
 
+    //hookshot
+    public Transform hitPoint;
+    private Vector3 hookShotPos;
+    public float hookSpeed = 5f;
+    private Vector3 flyingMomentum;
+
+    //player states
+    private enum State { Normal, Flying }
+    private State state;
 
 
 
     // Start is called before the first frame update
     void Start()
     {
+        state = State.Normal;
         bodyScale = body.localScale;
         initialControllerHeight = controller.height;
     }
@@ -53,15 +63,27 @@ public class Player : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        PlayerMovement();
+        switch (state)
+        {
+            case State.Normal:
+                PlayerMovement();
+                CameraControl();
+                Jump();
+                Crouch();
+                SlideTimer();
+                HanddleHookShotStart();
+                break;
 
-        CameraControl();
+            case State.Flying:
+                HandleHookShotMovement();
+                CameraControl();
+                break;
 
-        Jump();
+            default:
+                break;
+        }
 
-        Crouch();
-
-        SlideTimer();
+        
     }
 
     private void Crouch()
@@ -133,6 +155,8 @@ public class Player : MonoBehaviour
 
         animator.SetFloat("Speed", movement.magnitude);
 
+        movement += flyingMomentum * Time.deltaTime;
+
         controller.Move(movement);
 
         velocity.y += Physics.gravity.y * Mathf.Pow(Time.deltaTime, 2) * gravityModifier;
@@ -141,6 +165,15 @@ public class Player : MonoBehaviour
             velocity.y = Physics.gravity.y * Time.deltaTime;
 
         controller.Move(velocity);
+
+        if(flyingMomentum.magnitude > 0f)
+        {
+            float reductionAmout = 4f;
+            flyingMomentum -= flyingMomentum * reductionAmout * Time.deltaTime;
+
+            if (flyingMomentum.magnitude < 5f)
+                flyingMomentum = Vector3.zero;
+        }
     }
 
     void CameraControl()
@@ -159,5 +192,71 @@ public class Player : MonoBehaviour
     {
         if (startSlideTimer)
             currentSlideTimer += Time.deltaTime;
+    }
+
+    void HanddleHookShotStart()
+    {
+        if (TestHookShotInput())
+        {
+            RaycastHit hit;
+
+            if(Physics.Raycast(cameraHead.position, cameraHead.forward, out hit))
+            {
+                hitPoint.position = hit.point;
+                state = State.Flying;
+                hookShotPos = hit.point;
+            }
+        }
+    }
+
+    void HandleHookShotMovement()
+    {
+        //movement direction
+        Vector3 hookShotDirection = (hookShotPos - transform.position).normalized;
+
+        float hookShotMinSpeed = 12f, hookShotMaxSpeed = 50f;
+
+        float hookShotSpeedModifier = Mathf.Clamp(Vector3.Distance(transform.position, hookShotPos), hookShotMinSpeed, hookShotMaxSpeed);
+
+        controller.Move(hookShotDirection * hookSpeed * hookShotSpeedModifier * Time.deltaTime);
+
+        if (Vector3.Distance(transform.position, hookShotPos) < 2f)
+        {
+            state = State.Normal;
+            ResetGravity();
+        }
+
+        if (TestHookShotInput())
+        {
+            state = State.Normal;
+            ResetGravity();
+        }
+
+        if (TestJumpInput())
+        {
+            float extraMomentum = 40f, jumpSpeedUp = 40f;
+
+            flyingMomentum += hookShotDirection * hookSpeed * extraMomentum;
+
+            flyingMomentum += Vector3.up * jumpSpeedUp;
+
+            state = State.Normal;
+            ResetGravity();
+        }
+    }
+
+    bool TestJumpInput()
+    {
+        return Input.GetKeyDown(KeyCode.Space);
+    }
+
+    bool TestHookShotInput()
+    {
+        return Input.GetKeyDown(KeyCode.E);
+    }
+
+    void ResetGravity()
+    {
+        velocity.y = 0f;
     }
 }
