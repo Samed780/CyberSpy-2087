@@ -45,9 +45,12 @@ public class Player : MonoBehaviour
     private Vector3 hookShotPos;
     public float hookSpeed = 5f;
     private Vector3 flyingMomentum;
+    public Transform grapplingHook;
+    private float hookShotSize;
+    public ParticleSystem warpEffect;
 
     //player states
-    private enum State { Normal, Flying }
+    private enum State { Normal, Flying , HookShotThrow}
     private State state;
 
 
@@ -56,8 +59,12 @@ public class Player : MonoBehaviour
     void Start()
     {
         state = State.Normal;
+
         bodyScale = body.localScale;
+
         initialControllerHeight = controller.height;
+        
+        grapplingHook.gameObject.SetActive(false);
     }
 
     // Update is called once per frame
@@ -77,6 +84,11 @@ public class Player : MonoBehaviour
             case State.Flying:
                 HandleHookShotMovement();
                 CameraControl();
+                break;
+            case State.HookShotThrow:
+                PlayerMovement();
+                CameraControl();
+                ThrowHook();
                 break;
 
             default:
@@ -203,14 +215,33 @@ public class Player : MonoBehaviour
             if(Physics.Raycast(cameraHead.position, cameraHead.forward, out hit))
             {
                 hitPoint.position = hit.point;
-                state = State.Flying;
                 hookShotPos = hit.point;
+
+                hookShotSize = 0f;
+                grapplingHook.gameObject.SetActive(true);
+                state = State.HookShotThrow;
             }
+        }
+    }
+
+    void ThrowHook()
+    {
+        grapplingHook.LookAt(hookShotPos);
+        float hookThrowSpeed = 50f;
+        hookShotSize += hookThrowSpeed * Time.deltaTime;
+        grapplingHook.localScale = new Vector3(1, 1, hookShotSize);
+        if (hookShotSize >= Vector3.Distance(transform.position, hookShotPos))
+        {
+            state = State.Flying;
+            FindObjectOfType<CameraMovement>().ZoomIn(100f);
+            warpEffect.Play();
         }
     }
 
     void HandleHookShotMovement()
     {
+        grapplingHook.LookAt(hookShotPos);
+
         //movement direction
         Vector3 hookShotDirection = (hookShotPos - transform.position).normalized;
 
@@ -221,16 +252,10 @@ public class Player : MonoBehaviour
         controller.Move(hookShotDirection * hookSpeed * hookShotSpeedModifier * Time.deltaTime);
 
         if (Vector3.Distance(transform.position, hookShotPos) < 2f)
-        {
-            state = State.Normal;
-            ResetGravity();
-        }
+            CancelHook();
 
         if (TestHookShotInput())
-        {
-            state = State.Normal;
-            ResetGravity();
-        }
+            CancelHook();
 
         if (TestJumpInput())
         {
@@ -240,8 +265,7 @@ public class Player : MonoBehaviour
 
             flyingMomentum += Vector3.up * jumpSpeedUp;
 
-            state = State.Normal;
-            ResetGravity();
+            CancelHook();
         }
     }
 
@@ -258,5 +282,14 @@ public class Player : MonoBehaviour
     void ResetGravity()
     {
         velocity.y = 0f;
+    }
+
+    void CancelHook()
+    {
+        state = State.Normal;
+        ResetGravity();
+        grapplingHook.gameObject.SetActive(false);
+        FindObjectOfType<CameraMovement>().ZoomOut();
+        warpEffect.Stop();
     }
 }
